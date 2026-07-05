@@ -182,7 +182,7 @@ class VertexService:
         }
 
         try:
-            response = requests.post(self.url, json=payload, headers=headers)
+            response = requests.post(self.url, json=payload, headers=headers, timeout=30.0)
             
             # If covariates failed with HTTP 400 (unsupported), trigger automatic fallback retry
             if response.status_code == 400 and has_covariates:
@@ -196,7 +196,7 @@ class VertexService:
                 print(json.dumps(fallback_payload, indent=2))
                 print("="*50 + "\n")
                 
-                response = requests.post(self.url, json=fallback_payload, headers=headers)
+                response = requests.post(self.url, json=fallback_payload, headers=headers, timeout=30.0)
                 response.raise_for_status()
                 
                 result = response.json()
