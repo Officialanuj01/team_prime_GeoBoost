@@ -113,7 +113,7 @@ export default function UploadPage() {
 
     try {
       // Connect to the deployed Cloud Run service URL
-      const response = await fetch('https://geoboost-backend-791772154699.asia-south1.run.app/forecast', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL}/forecast`, {
         method: 'POST',
         body: formData,
       });
