@@ -1,0 +1,9 @@
+date,occupancy,hotel_tier,room_type,region,hotel_id,holiday,festival,promotion,weekday,special_event,discount_percentage,temperature
+2026-07-01,61,Luxury,Deluxe Suite,Tahoe,H-001,None,None,None,Wednesday,None,0,72
+2026-07-02,64,Luxury,Deluxe Suite,Tahoe,H-001,None,None,Early Summer Offer,Thursday,None,10,74
+2026-07-03,71,Luxury,Deluxe Suite,Tahoe,H-001,None,None,Weekend Escape,Friday,None,15,77
+2026-07-04,93,Luxury,Deluxe Suite,Tahoe,H-001,Independence Day,None,Independence Day Sale,Saturday,Fireworks Concert,25,85
+2026-07-05,89,Luxury,Deluxe Suite,Tahoe,H-001,None,None,Independence Day Sale,Sunday,Lake Music Festival,20,84
+2026-07-06,74,Luxury,Deluxe Suite,Tahoe,H-001,None,None,None,Monday,None,0,76
+2026-07-07,69,Luxury,Deluxe Suite,Tahoe,H-001,None,None,Loyalty Member Offer,Tuesday,None,10,74
+2026-07-08,72,Luxury,Deluxe Suite,Tahoe,H-001,None,None,None,Wednesday,None,0,75

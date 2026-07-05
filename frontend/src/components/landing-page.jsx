@@ -62,7 +62,8 @@ export default function LandingPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert(`Thank you for subscribing with email: ${email}`);
+    // Redirect to /upload to trigger the login modal popup immediately
+    navigate('/upload');
     setEmail('');
   };
 

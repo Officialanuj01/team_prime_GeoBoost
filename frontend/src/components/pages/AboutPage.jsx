@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Globe, MapPin, Sparkles, Heart, Rocket, Target, Code, ArrowRight } from 'lucide-react';
+import { Users, Globe, MapPin, Sparkles, Heart, Rocket, Target, Code, ArrowRight, Linkedin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AboutPage() {
@@ -97,11 +97,30 @@ export default function AboutPage() {
           <p className="text-gray-500 max-w-lg mx-auto mb-8">
             A passionate team of developers competing in the Google Solution Challenge 2026, building solutions that matter.
           </p>
-          <div className="inline-flex items-center gap-3 bg-white rounded-2xl px-8 py-5 shadow-card border border-primary-100/30">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-3xl">🚀</div>
-            <div className="text-left">
-              <p className="font-display font-bold text-gray-800">Team Prime</p>
-            </div>
+          
+          <div className="flex flex-wrap justify-center gap-6 mt-8">
+            {[
+              { name: 'Anuj Sahu', role: 'Full Stack Developer', linkedin: 'https://www.linkedin.com/in/anuj-sahu-4059bb253/' },
+              { name: 'Saksham Gupta', role: 'Full Stack Developer', linkedin: 'https://www.linkedin.com/in/saksham-gupta-87a1a427b/' },
+              { name: 'Devraj Patil', role: 'Full Stack Developer', linkedin: 'https://www.linkedin.com/in/devraj-patil-0944b22b5/' },
+            ].map((member, i) => (
+              <a 
+                key={member.name}
+                href={member.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 bg-white rounded-2xl px-6 py-4 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300 border border-primary-100/30 group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white text-lg font-bold group-hover:scale-110 transition-transform duration-300">
+                  {member.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div className="text-left">
+                  <p className="font-display font-bold text-gray-800">{member.name}</p>
+                  <p className="text-xs text-primary-500 font-medium">{member.role}</p>
+                </div>
+                <Linkedin className="w-4 h-4 text-gray-300 group-hover:text-primary-500 transition-colors ml-auto" />
+              </a>
+            ))}
           </div>
         </motion.div>
 

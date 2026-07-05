@@ -1,0 +1,103 @@
+name: PR Approval Gate
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled, ready_for_review]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  approval-and-label-gate:
+    name: Require Approval And SDLC Label
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Validate PR Approval And SDLC Label
+        uses: actions/github-script@v7
+        env:
+          REQUIRED_SDLC_LABEL: sdlc-approved
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.setFailed('This workflow only supports pull request events.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = pr.number;
+            const { data: prDetails } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number,
+            });
+            const author = prDetails.user?.login || pr.user.login;
+            // Require non-empty title and description (body)
+            const title = (prDetails.title || '').trim();
+            const body = (prDetails.body || '').trim();
+
+            if (!title) {
+              core.setFailed('PR must have a non-empty title.');
+              return;
+            }
+
+            if (!body) {
+              core.setFailed('PR must have a non-empty description (PR body).');
+              return;
+            }
+            const requiredLabel = (process.env.REQUIRED_SDLC_LABEL || 'sdlc-approved').toLowerCase();
+
+            // Keep the latest review state per reviewer and require at least one APPROVED review from non-author.
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner,
+              repo,
+              pull_number,
+              per_page: 100,
+            });
+
+            const latestReviewStateByUser = new Map();
+            for (const review of reviews) {
+              const reviewer = review.user?.login;
+              if (!reviewer || reviewer === author) continue;
+
+              const existing = latestReviewStateByUser.get(reviewer);
+              const reviewTime = new Date(review.submitted_at || review.created_at || 0).getTime();
+              const existingTime = existing ? existing.time : -1;
+
+              if (reviewTime >= existingTime) {
+                latestReviewStateByUser.set(reviewer, { state: review.state, time: reviewTime });
+              }
+            }
+
+            const hasApproval = [...latestReviewStateByUser.values()].some(
+              (item) => item.state === 'APPROVED'
+            );
+
+            // Fetch labels from the Issues API to avoid stale/missing labels in event payloads.
+            const issueLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner,
+              repo,
+              issue_number: pull_number,
+              per_page: 100,
+            });
+            const labelNames = issueLabels.map((l) => (l.name || '').toLowerCase());
+            const hasSdlcLabel = labelNames.includes(requiredLabel);
+
+            if (!hasApproval) {
+              core.setFailed('PR must be approved by at least one reviewer (not the PR author).');
+              return;
+            }
+
+            if (!hasSdlcLabel) {
+              core.setFailed(
+                `PR must include the SDLC approval label: ${requiredLabel}. Current PR labels: ${labelNames.join(', ') || 'none'}`
+              );
+              return;
+            }
+
+            core.info('Gate passed: PR has reviewer approval and SDLC approval label.');

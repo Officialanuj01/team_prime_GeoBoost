@@ -26,7 +26,7 @@ export default function FeaturesPage() {
       icon: <Brain className="w-7 h-7" />,
       title: 'Tourism Campaign Optimization',
       description: 'ML algorithms analyze regional tourism data, local events, and hotel availability to recommend the most effective marketing strategies.',
-      details: ['Demand forecasting with Prophet/LSTM', 'Multi-channel budget allocation', 'A/B testing recommendations', 'Seasonal pattern detection'],
+      details: ['Demand forecasting with advanced AI models', 'Multi-channel budget allocation', 'A/B testing recommendations', 'Seasonal pattern detection'],
       gradient: 'from-primary-400 to-primary-500',
     },
     {
@@ -53,12 +53,12 @@ export default function FeaturesPage() {
   ];
 
   const capabilities = [
-    { icon: <Cpu className="w-5 h-5" />, label: 'AI/ML Core', value: 'Gemini + Custom Models' },
-    { icon: <Database className="w-5 h-5" />, label: 'Data Sources', value: '15+ Integrations' },
-    { icon: <Shield className="w-5 h-5" />, label: 'Security', value: 'SOC2 Compliant' },
-    { icon: <Clock className="w-5 h-5" />, label: 'Processing', value: '< 2s Response Time' },
-    { icon: <Globe className="w-5 h-5" />, label: 'Coverage', value: '50+ Regions' },
-    { icon: <Layers className="w-5 h-5" />, label: 'API', value: 'RESTful + WebSocket' },
+    { icon: <Cpu className="w-5 h-5" />, label: 'AI/ML Core', value: 'Vertex AI + TimesFM 2.5' },
+    { icon: <Database className="w-5 h-5" />, label: 'Backend Deploy', value: 'Google Cloud Run' },
+    { icon: <Shield className="w-5 h-5" />, label: 'Authentication', value: 'Google OAuth 2.0' },
+    { icon: <Clock className="w-5 h-5" />, label: 'Response Time', value: '< 2s Forecast API' },
+    { icon: <Globe className="w-5 h-5" />, label: 'Frontend Host', value: 'Render (React + Vite)' },
+    { icon: <Layers className="w-5 h-5" />, label: 'Solution Track', value: 'Google Solution 2026' },
   ];
 
   return (
