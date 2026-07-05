@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Home, BarChart3, Zap, Users, LogIn } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, Home, BarChart3, Zap, Users, LogIn, Upload, LogOut, User } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 /* Inline SVG Logo Component */
 function GeoBoostLogo({ size = 36 }) {
@@ -22,10 +22,11 @@ function GeoBoostLogo({ size = 36 }) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ user, onLoginClick, onLogout }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -39,10 +40,12 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Home', href: '/', icon: <Home className="w-4 h-4" /> },
-    { label: 'Features', href: '/#features', icon: <Zap className="w-4 h-4" /> },
-    { label: 'Analytics', href: '/#analytics', icon: <BarChart3 className="w-4 h-4" /> },
-    { label: 'About', href: '/#about', icon: <Users className="w-4 h-4" /> },
+    { label: 'Features', href: '/features', icon: <Zap className="w-4 h-4" /> },
+    { label: 'Upload', href: '/upload', icon: <Upload className="w-4 h-4" /> },
+    { label: 'About', href: '/about', icon: <Users className="w-4 h-4" /> },
   ];
+
+  const isActive = (href) => location.pathname === href;
 
   return (
     <>
@@ -68,26 +71,47 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-500 hover:text-primary-600 rounded-lg hover:bg-primary-50/50 transition-all duration-200"
+                to={link.href}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive(link.href)
+                    ? 'text-primary-600 bg-primary-50/80'
+                    : 'text-gray-500 hover:text-primary-600 hover:bg-primary-50/50'
+                }`}
               >
-                <span className="text-primary-400">{link.icon}</span>
+                <span className={isActive(link.href) ? 'text-primary-500' : 'text-primary-400'}>{link.icon}</span>
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/CampaignUploader"
-              className="btn-primary text-sm !px-5 !py-2.5 gap-2"
-            >
-              <LogIn className="w-4 h-4" />
-              Get Started
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-50/50">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white text-xs font-bold">
+                    {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">{user.name}</span>
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all duration-200"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onLoginClick}
+                className="btn-primary text-sm !px-5 !py-2.5 gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                Login
+              </button>
+            )}
           </div>
 
           {/* Mobile Toggle */}
@@ -113,23 +137,39 @@ export default function Navbar() {
           >
             <div className="glass-strong rounded-2xl p-4 space-y-1 shadow-soft-lg">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.label}
-                  href={link.href}
+                  to={link.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:text-primary-600 rounded-xl hover:bg-primary-50/50 transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                    isActive(link.href)
+                      ? 'text-primary-600 bg-primary-50/80'
+                      : 'text-gray-600 hover:text-primary-600 hover:bg-primary-50/50'
+                  }`}
                 >
                   <span className="text-primary-400">{link.icon}</span>
                   {link.label}
-                </a>
+                </Link>
               ))}
               <div className="pt-2 border-t border-primary-100/30">
-                <Link
-                  to="/CampaignUploader"
-                  className="block text-center btn-primary mt-2"
-                >
-                  Get Started
-                </Link>
+                {user ? (
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-accent-500 flex items-center justify-center text-white text-xs font-bold">
+                        {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                      <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                    </div>
+                    <button onClick={onLogout} className="text-sm text-red-500"><LogOut className="w-4 h-4" /></button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setIsMobileOpen(false); onLoginClick(); }}
+                    className="block w-full text-center btn-primary mt-2"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" /> Login
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

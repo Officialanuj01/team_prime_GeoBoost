@@ -7,13 +7,13 @@ export default function Footer() {
 
   const footerLinks = {
     Product: [
-      { label: 'Features', href: '/#features' },
-      { label: 'How It Works', href: '/#how-it-works' },
-      { label: 'Analytics', href: '/#analytics' },
-      { label: 'Pricing', href: '#' },
+      { label: 'Features', href: '/features' },
+      { label: 'Analytics', href: '/analytics' },
+      { label: 'Upload Data', href: '/upload' },
+      { label: 'Campaigns', href: '/CampaignUploader' },
     ],
     Company: [
-      { label: 'About', href: '#' },
+      { label: 'About', href: '/about' },
       { label: 'Blog', href: '#' },
       { label: 'Careers', href: '#' },
       { label: 'Contact', href: '#' },
@@ -76,12 +76,21 @@ export default function Footer() {
               <ul className="space-y-3">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-gray-500 hover:text-primary-600 transition-colors duration-200"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith('/') ? (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-gray-500 hover:text-primary-600 transition-colors duration-200"
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-sm text-gray-500 hover:text-primary-600 transition-colors duration-200"
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>

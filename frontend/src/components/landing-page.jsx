@@ -1,12 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, Calendar, MessageSquare, Target, Zap, TrendingUp, 
   Globe, Users, ArrowRight, ChevronRight, Upload, Brain, 
   LineChart, Send, Check, Sparkles, MapPin, Building2,
   Rocket, Eye, Shield
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import GlassCard from './ui/GlassCard';
 import AnimatedCounter from './ui/AnimatedCounter';
 
@@ -104,13 +104,67 @@ export default function LandingPage() {
 
 
 
+  /* ----- ANCHOR NAV SECTIONS ----- */
+  const sections = [
+    { id: 'hero', label: 'Home' },
+    { id: 'features', label: 'Features' },
+    { id: 'how-it-works', label: 'How It Works' },
+    { id: 'analytics', label: 'Analytics' },
+    { id: 'cta', label: 'Get Started' },
+  ];
+
+  const [activeSection, setActiveSection] = useState('hero');
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    sections.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="relative">
+      {/* ===== Right-Side Sticky Anchor Nav ===== */}
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col items-end gap-3">
+        {sections.map(({ id, label }) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className={`group flex items-center gap-2 transition-all duration-300 ${
+              activeSection === id ? 'opacity-100' : 'opacity-40 hover:opacity-80'
+            }`}
+          >
+            <span className={`text-[11px] font-medium transition-all duration-300 ${
+              activeSection === id ? 'text-primary-600 translate-x-0' : 'text-gray-400 translate-x-2 group-hover:translate-x-0'
+            }`}>
+              {label}
+            </span>
+            <div className={`rounded-full transition-all duration-300 ${
+              activeSection === id
+                ? 'w-2.5 h-2.5 bg-gradient-to-br from-primary-400 to-accent-500 shadow-soft'
+                : 'w-1.5 h-1.5 bg-gray-300 group-hover:bg-primary-300'
+            }`} />
+          </a>
+        ))}
+      </div>
 
       {/* ============================================
           HERO SECTION
           ============================================ */}
-      <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-hero">
+      <section id="hero" className="relative min-h-screen flex items-center overflow-hidden bg-gradient-hero">
         {/* Floating Decoration Circles */}
         <div className="deco-circle deco-circle-cyan w-[500px] h-[500px] -top-40 -right-40 animate-pulse-soft" />
         <div className="deco-circle deco-circle-blue w-[400px] h-[400px] -bottom-40 -left-40 animate-pulse-soft" style={{ animationDelay: '1.5s' }} />
@@ -160,18 +214,18 @@ export default function LandingPage() {
 
               {/* CTA Buttons */}
               <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={() => navigate('/CampaignUploader')}
+                <Link
+                  to="/features"
                   className="btn-primary gap-2 !px-8 !py-3.5 text-base"
                 >
                   <Zap className="w-4 h-4" />
-                  Get Started
+                  Explore Features
                   <ArrowRight className="w-4 h-4" />
-                </button>
-                <a href="#features" className="btn-secondary gap-2 !px-8 !py-3.5 text-base">
-                  <Eye className="w-4 h-4" />
-                  View Demo
-                </a>
+                </Link>
+                <Link to="/upload" className="btn-secondary gap-2 !px-8 !py-3.5 text-base">
+                  <Upload className="w-4 h-4" />
+                  Upload Data
+                </Link>
               </motion.div>
             </motion.div>
 
@@ -468,7 +522,7 @@ export default function LandingPage() {
       {/* ============================================
           CTA / NEWSLETTER
           ============================================ */}
-      <section id="about" className="relative py-24 lg:py-32 bg-gradient-section overflow-hidden">
+      <section id="cta" className="relative py-24 lg:py-32 bg-gradient-section overflow-hidden">
         <div className="section-container">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
