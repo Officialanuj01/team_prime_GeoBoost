@@ -67,5 +67,5 @@ Contributions are welcome! To contribute to Hotel Campaign Optimizer, follow the
 
 [Github Link](https://github.com/Officialanuj01/HackthonBackEnd.git)
 
-We are continuously trying to improve and we have a separate GitHub link to track the process. 
+We are continuously trying to improve.
 
