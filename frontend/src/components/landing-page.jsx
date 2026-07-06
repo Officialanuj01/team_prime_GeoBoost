@@ -321,10 +321,10 @@ export default function LandingPage() {
           >
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { end: 500, suffix: '+', label: 'Campaigns Optimized' },
-                { end: 32, suffix: '%', label: 'Avg Occupancy Boost' },
-                { end: 150, suffix: '+', label: 'Partner Hotels' },
-                { end: 98, suffix: '%', label: 'Client Satisfaction' },
+                { end: 3, suffix: '+', label: 'AI Models Integrated' },
+                { end: 20, suffix: 'ms', label: 'Prediction Latency' },
+                { end: 7, suffix: ' Days', label: 'Forecast Horizon' },
+                { end: 100, suffix: '%', label: 'Data Privacy (OAuth)' },
               ].map((stat) => (
                 <div key={stat.label} className="glass-card p-5 text-center">
                   <AnimatedCounter end={stat.end} suffix={stat.suffix} label={stat.label} />

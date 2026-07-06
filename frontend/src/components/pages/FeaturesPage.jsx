@@ -57,8 +57,8 @@ export default function FeaturesPage() {
     { icon: <Database className="w-5 h-5" />, label: 'Backend Deploy', value: 'Google Cloud Run' },
     { icon: <Shield className="w-5 h-5" />, label: 'Authentication', value: 'Google OAuth 2.0' },
     { icon: <Clock className="w-5 h-5" />, label: 'Response Time', value: '< 2s Forecast API' },
-    { icon: <Globe className="w-5 h-5" />, label: 'Frontend Host', value: 'Render (React + Vite)' },
-    { icon: <Layers className="w-5 h-5" />, label: 'Solution Track', value: 'Google Solution 2026' },
+    { icon: <Globe className="w-5 h-5" />, label: 'Frontend Host', value: 'Firebase' },
+    { icon: <Layers className="w-5 h-5" />, label: 'Solution Track', value: 'Gen AI APAC Hackathon' },
   ];
 
   return (
