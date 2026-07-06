@@ -26,6 +26,9 @@ jobs:
           npm run build
         env:
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_AUTH_API_URL: ${{ secrets.VITE_AUTH_API_URL }}
+          VITE_BACKEND_API_URL: ${{ secrets.VITE_BACKEND_API_URL }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
