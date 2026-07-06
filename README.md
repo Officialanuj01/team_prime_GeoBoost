@@ -200,30 +200,8 @@ Demo datasets are also supported for quick experimentation.
 ---
 
 # 🏗 Architecture
+<img src="./assets/Diagram1.png">
 
-```mermaid
-graph TD
-
-A[React Frontend]
-B[CSV Upload]
-C[Google Cloud Run Backend]
-D[Vertex AI TimesFM]
-E[Google Gemini]
-F[Forecast Processing]
-G[Recommendation Engine]
-H[JSON Response]
-I[Analytics Dashboard]
-
-A --> B
-B --> C
-C --> D
-C --> E
-D --> F
-E --> F
-F --> G
-G --> H
-H --> I
-```
 
 ---
 
