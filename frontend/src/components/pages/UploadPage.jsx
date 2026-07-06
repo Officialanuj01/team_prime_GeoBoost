@@ -139,7 +139,7 @@ function ForecastChart({ data }) {
   );
 }
 
-export default function UploadPage() {
+export default function UploadPage({ user }) {
   const navigate = useNavigate();
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -199,6 +199,11 @@ export default function UploadPage() {
       return s ? JSON.parse(s) : null;
     } catch { return null; }
   });
+
+  useEffect(() => {
+    setCurrentUser(user);
+  }, [user]);
+
   const [showAuthModal, setShowAuthModal] = useState(true);
 
   const handleLogin = (u) => { setCurrentUser(u); setShowAuthModal(false); window.location.reload(); };
