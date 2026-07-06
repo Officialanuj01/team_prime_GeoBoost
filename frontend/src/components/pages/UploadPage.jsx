@@ -152,7 +152,7 @@ export default function UploadPage() {
   const [includePromotions, setIncludePromotions] = useState(true);
   const [includeWeather, setIncludeWeather] = useState(false);
 
-  // Twilio settings (read-only for future integration)
+  // WhatsApp settings (read-only for future integration)
   const [audienceSegment, setAudienceSegment] = useState('Leisure Weekend Travelers');
   const [messageTemplate, setMessageTemplate] = useState('Festival Offer Template');
   const [campaignStatus, setCampaignStatus] = useState('Draft'); // 'Draft', 'Sending', 'Completed'
@@ -608,12 +608,12 @@ export default function UploadPage() {
               </div>
             </div>
 
-            {/* Box 3: Personalized Messaging (Twilio) */}
+            {/* Box 3: Personalized Messaging (WhatsApp) */}
             <div className="glass-card p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800">Personalized Messaging</h3>
-                <span className="text-[9px] font-bold uppercase text-amber-600 bg-amber-50 ring-1 ring-amber-500/10 px-2 py-0.5 rounded">
-                  Twilio
+                <span className="text-[9px] font-bold uppercase text-emerald-600 bg-emerald-50 ring-1 ring-emerald-500/10 px-2 py-0.5 rounded">
+                  WhatsApp
                 </span>
               </div>
 
@@ -664,32 +664,10 @@ export default function UploadPage() {
               {/* Messaging controls */}
               <div className="flex gap-2">
                 <button
-                  onClick={triggerCampaign}
-                  disabled={isCampaignSending || campaignStatus === 'Completed'}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg border transition-colors flex items-center justify-center gap-1 ${
-                    campaignStatus === 'Completed'
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 cursor-not-allowed'
-                      : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
-                  }`}
+                  onClick={() => navigate('/NotificationSender')}
+                  className="flex-1 py-2 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors flex items-center justify-center gap-1 shadow-sm"
                 >
-                  <Check className="w-3.5 h-3.5" /> {campaignStatus === 'Completed' ? 'Sent' : 'Send Test'}
-                </button>
-                <button
-                  onClick={triggerCampaign}
-                  disabled={isCampaignSending || campaignStatus === 'Completed'}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm ${
-                    campaignStatus === 'Completed'
-                      ? 'bg-emerald-600 text-white cursor-not-allowed'
-                      : isCampaignSending
-                      ? 'bg-blue-400 text-white cursor-wait'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  {isCampaignSending ? (
-                    <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Sending...</>
-                  ) : (
-                    <><Send className="w-3.5 h-3.5" /> {campaignStatus === 'Completed' ? 'Campaign Sent' : 'Campaigns'}</>
-                  )}
+                  <Send className="w-3.5 h-3.5" /> Open Messaging Page
                 </button>
               </div>
             </div>
@@ -994,32 +972,16 @@ export default function UploadPage() {
                 {/* Action Buttons Footer */}
                 <div className="flex gap-2.5 pt-4 border-t border-slate-100 mt-4">
                   <button
-                    onClick={triggerCampaign}
-                    disabled={isCampaignSending || campaignStatus === 'Completed'}
-                    className={`flex-1 py-2.5 rounded-lg border font-bold text-xs flex items-center justify-center gap-1.5 transition-colors ${
-                      campaignStatus === 'Completed'
-                        ? 'border-emerald-200 text-emerald-600 bg-emerald-50/50 cursor-not-allowed'
-                        : 'border-blue-200 text-blue-600 hover:bg-blue-50'
-                    }`}
+                    onClick={() => navigate('/NotificationSender')}
+                    className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
                   >
                     <Megaphone className="w-3.5 h-3.5" /> Create Campaign
                   </button>
                   <button
-                    onClick={triggerCampaign}
-                    disabled={isCampaignSending || campaignStatus === 'Completed'}
-                    className={`flex-1 py-2.5 rounded-lg text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm shadow-blue-500/10 ${
-                      campaignStatus === 'Completed'
-                        ? 'bg-emerald-600 cursor-not-allowed'
-                        : isCampaignSending
-                        ? 'bg-blue-400 cursor-wait'
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
+                    onClick={() => navigate('/NotificationSender')}
+                    className="flex-1 py-2.5 rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
                   >
-                    {isCampaignSending ? (
-                      <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Sending...</>
-                    ) : (
-                      <><Send className="w-3.5 h-3.5" /> {campaignStatus === 'Completed' ? 'Messages Sent' : 'Send Messages'}</>
-                    )}
+                    <Send className="w-3.5 h-3.5" /> Send Messages
                   </button>
                 </div>
               </div>

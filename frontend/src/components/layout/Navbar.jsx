@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Home, BarChart3, Zap, Users, LogIn, Upload, LogOut, User } from 'lucide-react';
+import { Menu, X, Home, BarChart3, Zap, Users, LogIn, Upload, LogOut, User, Send } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 /* Inline SVG Logo Component */
@@ -42,6 +42,7 @@ export default function Navbar({ user, onLoginClick, onLogout }) {
     { label: 'Home', href: '/', icon: <Home className="w-4 h-4" /> },
     { label: 'Features', href: '/features', icon: <Zap className="w-4 h-4" /> },
     { label: 'Upload', href: '/upload', icon: <Upload className="w-4 h-4" /> },
+    { label: 'Outreach', href: '/NotificationSender', icon: <Send className="w-4 h-4" /> },
     { label: 'About', href: '/about', icon: <Users className="w-4 h-4" /> },
   ];
 
