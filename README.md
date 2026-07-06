@@ -1,10 +1,6 @@
 # 🌍 GeoBoost — AI-Powered Tourism Intelligence Platform
 
 <p align="center">
-  <img src="https://via.placeholder.com/1200x400.png?text=GeoBoost+-+AI+Powered+Tourism+Platform" alt="GeoBoost Banner" />
-</p>
-
-<p align="center">
   <strong>Predict Demand • Optimize Campaigns • Empower Tourism with AI</strong>
 </p>
 
