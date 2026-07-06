@@ -166,16 +166,14 @@ Based on forecasts and regional context, Gemini generates recommendations across
 
 ---
 
-## ✉️ Personalized Notifications
+## ✉️ Personalized WhatsApp & SMS Outreach
 
-GeoBoost integrates **Twilio Messaging API** to deliver automated SMS notifications to:
+GeoBoost integrates a custom **WhatsApp Outreach Connector** and messaging support to target guests directly:
 
-- Hotels
-- Tourism authorities
-- Local businesses
-- Marketing teams
-
-This enables rapid campaign coordination whenever demand changes are forecasted.
+- **WhatsApp Account Linker**: Scan the secure QR code on-screen to pair a phone directly.
+- **Personalized AI Promos**: Automatically write custom marketing copy based on the guest's booked room type and preferred travel destination (e.g., beach, mountain, city).
+- **Interactive Campaign Dashboard**: Generate, preview, edit, and dispatch messages dynamically to guests when low occupancy warnings are triggered.
+- **Multi-channel Coordination**: Connects hotels, local businesses, and regional tourism departments seamlessly.
 
 ---
 
@@ -303,7 +301,7 @@ The dashboard provides:
 | API Hosting | Google Cloud Run |
 | AI Forecasting | Vertex AI TimesFM 2.5 |
 | Large Language Model | Google Gemini |
-| Messaging | Twilio |
+| Messaging | Twilio, WhatsApp Campaign Connector |
 | Charts | Recharts |
 | Deployment | Firebase Hosting |
 
@@ -434,7 +432,6 @@ Planned improvements include:
 - Multi-property analytics
 - Revenue forecasting (RevPAR & ADR)
 - Automated AI campaign generation
-- WhatsApp Business integration
 - Email marketing automation
 - BigQuery integration
 - Real-time streaming dashboards
