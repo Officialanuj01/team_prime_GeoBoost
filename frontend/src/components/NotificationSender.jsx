@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Send, ArrowLeft, AlertCircle, CheckCircle2, User, Loader2 } from 'lucide-react';
+import { Sparkles, Send, ArrowLeft, AlertCircle, CheckCircle2, User, Loader2, Upload } from 'lucide-react';
+import WhatsAppConnector from './WhatsAppConnector';
 
 export default function NotificationSender() {
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const s = localStorage.getItem('geoboost_user');
+      return s ? JSON.parse(s) : null;
+    } catch { return null; }
+  });
+  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -13,14 +21,100 @@ export default function NotificationSender() {
   const [sendSuccess, setSendSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5000';
-  const genAI = new GoogleGenerativeAI('AIzaSyAZ_kDwYZ6BSinhzoH-E6AojakoL9XKKPk');
+  const rawUserId = currentUser ? (currentUser.email || currentUser.name || 'guest_user') : 'guest_user';
+  const userId = rawUserId.replace(/[^\w-]/g, '_');
 
-  const customers = [
-    { name: 'John Doe', bookedRoom: 'Suite', preference: 'beach', phone: '+15555550101' },
-    { name: 'Jane Smith', bookedRoom: 'Double', preference: 'mountain', phone: '+15555550102' },
-    { name: 'Mark Johnson', bookedRoom: 'Single', preference: 'city', phone: '+15555550103' },
-  ];
+  const backendUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
+  const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+
+  const [inputMethod, setInputMethod] = useState('manual'); // 'manual' or 'csv'
+  const [customers, setCustomers] = useState([
+    { name: 'John Doe', bookedRoom: 'Suite', preference: 'beach', phone: '+919755500507' }
+  ]);
+
+  const [manualName, setManualName] = useState('John Doe');
+  const [manualPhone, setManualPhone] = useState('+919755500507');
+  const [manualRoom, setManualRoom] = useState('Suite');
+  const [manualPreference, setManualPreference] = useState('beach');
+
+  useEffect(() => {
+    if (inputMethod === 'manual') {
+      const defaultMsg = `Hi ${manualName || 'Valued Customer'}, thank you for booking a ${manualRoom} room with us. We have a special offer for your preferred ${manualPreference} trips!`;
+      setCustomers([
+        { name: manualName, phone: manualPhone, bookedRoom: manualRoom, preference: manualPreference }
+      ]);
+      setResponses([
+        { customer: manualName, room: manualRoom, preference: manualPreference, phone: manualPhone, message: defaultMsg }
+      ]);
+    }
+  }, [manualName, manualPhone, manualRoom, manualPreference, inputMethod]);
+
+  const handleCSVUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line !== '');
+      if (lines.length <= 1) {
+        setError('CSV file is empty or missing data rows.');
+        return;
+      }
+
+      // Parse headers
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      
+      const parsedCustomers = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        if (values.length === 0 || (values.length === 1 && values[0] === '')) continue;
+
+        let name = '';
+        let phone = '';
+        let room = 'Standard';
+        let preference = 'beach';
+
+        // Check if headers match standard keys
+        const nameIdx = headers.indexOf('name');
+        const phoneIdx = headers.indexOf('phone');
+        const roomIdx = headers.findIndex(h => h === 'room' || h === 'bookedroom');
+        const prefIdx = headers.indexOf('preference');
+
+        if (nameIdx !== -1) name = values[nameIdx];
+        else name = values[0] || '';
+
+        if (phoneIdx !== -1) phone = values[phoneIdx];
+        else phone = values[1] || '';
+
+        if (roomIdx !== -1) room = values[roomIdx] || 'Standard';
+        else if (values[2]) room = values[2];
+
+        if (prefIdx !== -1) preference = values[prefIdx] || 'beach';
+        else if (values[3]) preference = values[3];
+
+        if (name && phone) {
+          parsedCustomers.push({ name, phone, bookedRoom: room, preference });
+        }
+      }
+
+      if (parsedCustomers.length === 0) {
+        setError('No valid customer data found. Make sure your CSV contains "name" and "phone" fields.');
+      } else {
+        setCustomers(parsedCustomers);
+        setResponses(parsedCustomers.map(c => ({
+          customer: c.name,
+          room: c.bookedRoom,
+          preference: c.preference,
+          phone: c.phone,
+          message: `Hi ${c.name}, thank you for booking a ${c.bookedRoom} room with us. We have a special offer for your preferred ${c.preference} trips!`
+        })));
+        setError(null);
+      }
+    };
+
+    reader.readAsText(file);
+  };
 
   const preferenceGradients = {
     beach: 'from-cyan-400 to-cyan-500',
@@ -29,13 +123,25 @@ export default function NotificationSender() {
   };
 
   const handleGenerateMessages = async () => {
+    if (inputMethod === 'manual') {
+      if (!manualName || !manualPhone) {
+        setError('Please enter both Name and Phone number.');
+        return;
+      }
+    } else {
+      if (customers.length === 0) {
+        setError('Please upload a valid CSV file first.');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     setSendSuccess(false);
     const generatedResponses = [];
 
     for (const customer of customers) {
-      const prompt = `Create a friendly marketing message for ${customer.name}, who previously booked a ${customer.bookedRoom} room and prefers ${customer.preference} trips, inviting them to visit again. Keep it under 80 words.`;
+      const prompt = `Create a friendly marketing message for ${customer.name}, who booked a ${customer.bookedRoom} room and prefers ${customer.preference} trips, inviting them to visit again. Keep it under 120 characters, plain text only, absolutely NO emojis, and NO newlines.`;
       try {
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(prompt);
@@ -61,6 +167,7 @@ export default function NotificationSender() {
 
     try {
       const payload = {
+        userId,
         messages: responses.map((res) => ({
           customer: res.customer,
           phone: res.phone,
@@ -83,7 +190,9 @@ export default function NotificationSender() {
       }
 
       if (result.failedCount > 0) {
-        throw new Error(`Sent ${result.successCount} messages, ${result.failedCount} failed.`);
+        const firstFailed = result.results.find(r => !r.success);
+        const detailMsg = firstFailed ? `: ${firstFailed.error}` : '';
+        throw new Error(`Sent ${result.successCount} messages, ${result.failedCount} failed${detailMsg}`);
       }
 
       setSendSuccess(true);
@@ -109,21 +218,125 @@ export default function NotificationSender() {
           <p className="text-gray-500 text-lg">Generate AI-crafted marketing messages tailored to each customer.</p>
         </motion.div>
 
-        {/* Customer Preview Cards */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid gap-3 mb-8">
-          {customers.map((customer) => (
-            <div key={customer.name} className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-card border border-primary-100/30">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${preferenceGradients[customer.preference] || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white shrink-0`}>
-                <User className="w-5 h-5" />
+        <div className="mb-8">
+          <WhatsAppConnector userId={userId} onConnectionChange={setIsWhatsAppConnected} />
+        </div>
+
+        {isWhatsAppConnected && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            {/* Input Method Selector */}
+            <div className="flex gap-2 mb-6 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/50 relative z-10">
+          <button
+            onClick={() => { setInputMethod('manual'); setResponses([]); }}
+            className={`flex-1 py-2 px-4 rounded-lg font-semibold text-xs transition-all ${inputMethod === 'manual' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Manual Phone Number
+          </button>
+          <button
+            onClick={() => { setInputMethod('csv'); setCustomers([]); setResponses([]); }}
+            className={`flex-1 py-2 px-4 rounded-lg font-semibold text-xs transition-all ${inputMethod === 'csv' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Upload CSV
+          </button>
+        </div>
+
+        {/* Forms depending on Input Method */}
+        {inputMethod === 'manual' && (
+          <div className="glass-card p-5 mb-8 space-y-4 relative z-10 text-left">
+            <h3 className="text-sm font-bold text-slate-800 mb-2">Manual Customer Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
+                <input
+                  type="text"
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-700 outline-none focus:border-slate-300 focus:bg-white"
+                  placeholder="John Doe"
+                />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-gray-800">{customer.name}</p>
-                <p className="text-xs text-gray-400">{customer.bookedRoom} room · Prefers {customer.preference} trips</p>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Phone Number</label>
+                <input
+                  type="text"
+                  value={manualPhone}
+                  onChange={(e) => setManualPhone(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-700 outline-none focus:border-slate-300 focus:bg-white"
+                  placeholder="+919753768366"
+                />
               </div>
-              {responses.find((r) => r.customer === customer.name) && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
             </div>
-          ))}
-        </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Booked Room</label>
+                <select
+                  value={manualRoom}
+                  onChange={(e) => setManualRoom(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-700 outline-none focus:border-slate-300 focus:bg-white appearance-none cursor-pointer"
+                >
+                  <option value="Suite">Suite</option>
+                  <option value="Double">Double Room</option>
+                  <option value="Single">Single Room</option>
+                  <option value="Deluxe">Deluxe Room</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Trip Preference</label>
+                <select
+                  value={manualPreference}
+                  onChange={(e) => setManualPreference(e.target.value)}
+                  className="w-full text-xs rounded-lg border border-slate-200 bg-slate-50/50 py-2.5 px-3 font-medium text-slate-700 outline-none focus:border-slate-300 focus:bg-white appearance-none cursor-pointer"
+                >
+                  <option value="beach">Beach</option>
+                  <option value="mountain">Mountain</option>
+                  <option value="city">City</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {inputMethod === 'csv' && (
+          <div className="glass-card p-5 mb-8 space-y-4 relative z-10 text-left">
+            <h3 className="text-sm font-bold text-slate-800 mb-1">Upload Customer CSV</h3>
+            <p className="text-[11px] text-slate-400 font-medium">CSV structure: Name, Phone, Room (optional), Preference (optional)</p>
+            <div className="border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-xl p-6 transition-all bg-slate-50/50 flex flex-col items-center justify-center cursor-pointer relative">
+              <Upload className="w-8 h-8 text-slate-400 mb-2" />
+              <span className="text-xs font-bold text-slate-500">Drag and drop CSV here or click to browse</span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleCSVUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
+            {customers.length > 0 && (
+              <div className="flex items-center justify-between text-xs text-slate-500 font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 p-2.5 rounded-lg">
+                <span>Parsed {customers.length} customer(s) successfully!</span>
+                <button onClick={() => setCustomers([])} className="text-emerald-900 hover:underline">Clear</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Customer Preview Cards */}
+        {customers.length > 0 && customers[0].name && customers[0].phone && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid gap-3 mb-8 relative z-10 text-left">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Recipient Preview</h3>
+            {customers.map((customer) => (
+              <div key={customer.name} className="bg-white rounded-2xl p-4 flex items-center gap-4 shadow-card border border-primary-100/30">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${preferenceGradients[customer.preference] || 'from-gray-400 to-gray-500'} flex items-center justify-center text-white shrink-0`}>
+                  <User className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-800">{customer.name}</p>
+                  <p className="text-xs text-gray-400">{customer.bookedRoom} room · Prefers {customer.preference} trips · {customer.phone}</p>
+                </div>
+                {responses.find((r) => r.customer === customer.name) && <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />}
+              </div>
+            ))}
+          </motion.div>
+        )}
 
         {/* Generate Button */}
         <button onClick={handleGenerateMessages} disabled={loading} className="btn-glow w-full">
@@ -170,7 +383,17 @@ export default function NotificationSender() {
                     </div>
                     <div><p className="text-sm font-semibold text-gray-800">{res.customer}</p><p className="text-xs text-gray-400">{res.room} · {res.preference}</p></div>
                   </div>
-                  <div className="p-5"><p className="text-sm text-gray-600 leading-relaxed">{res.message}</p></div>
+                  <div className="p-5 text-left">
+                    <textarea
+                      value={res.message}
+                      onChange={(e) => {
+                        const newResponses = [...responses];
+                        newResponses[index].message = e.target.value;
+                        setResponses(newResponses);
+                      }}
+                      className="w-full text-xs text-slate-600 leading-relaxed border border-slate-200/80 rounded-xl p-3 outline-none focus:border-slate-300 focus:bg-white resize-y min-h-[90px] font-sans"
+                    />
+                  </div>
                 </motion.div>
               ))}
 
@@ -198,6 +421,8 @@ export default function NotificationSender() {
             </motion.div>
           )}
         </AnimatePresence>
+          </motion.div>
+        )}
       </div>
     </div>
   );

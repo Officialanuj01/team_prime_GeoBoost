@@ -1,23 +1,95 @@
-const twilio = require('twilio');
+const QRCode = require('qrcode');
+const { 
+  initClientForUser, 
+  sendWhatsAppMessageForUser, 
+  disconnectUser, 
+  getStatusForUser, 
+  getQrForUser 
+} = require('../services/whatsapp.service');
 
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_FROM_PHONE = process.env.TWILIO_FROM_PHONE;
+// Connect a specific user's WhatsApp client
+exports.connectWhatsApp = async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId in request body.' });
+  }
 
-exports.sendNotifications = async (req, res) => {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM_PHONE) {
-    return res.status(500).json({
-      error: 'Twilio configuration is missing. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_PHONE in your environment.',
+  try {
+    initClientForUser(userId);
+    res.json({ message: `Initializing WhatsApp Client session for User ${userId}.` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Expose QR code image data URL for a specific user
+exports.getWhatsAppQr = async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId in query parameters.' });
+  }
+
+  const qrString = getQrForUser(userId);
+  if (!qrString) {
+    const status = getStatusForUser(userId);
+    return res.status(404).json({ 
+      error: 'No active QR code available.',
+      status 
     });
   }
 
-  const { messages } = req.body;
+  try {
+    const qrCodeDataUrl = await QRCode.toDataURL(qrString);
+    res.json({ qrCodeDataUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to generate QR Code image: ' + err.message });
+  }
+};
 
+// Check WhatsApp client readiness status
+exports.getWhatsAppStatus = async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId in query parameters.' });
+  }
+
+  const status = getStatusForUser(userId);
+  res.json({ status });
+};
+
+// Disconnect/Logout user's WhatsApp client
+exports.disconnectWhatsApp = async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId in request body.' });
+  }
+
+  try {
+    await disconnectUser(userId);
+    res.json({ message: `Successfully disconnected WhatsApp session for User ${userId}.` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Dispatch campaign notifications
+exports.sendNotifications = async (req, res) => {
+  const { userId, messages } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'Missing userId in request body.' });
+  }
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Request body must include a non-empty messages array.' });
   }
 
-  const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+  const status = getStatusForUser(userId);
+  if (status !== 'ready') {
+    return res.status(503).json({
+      error: 'Your WhatsApp client is not connected yet. Please connect your WhatsApp account first.',
+      status
+    });
+  }
 
   const results = await Promise.all(
     messages.map(async (message) => {
@@ -31,18 +103,14 @@ exports.sendNotifications = async (req, res) => {
       }
 
       try {
-        const sentMessage = await client.messages.create({
-          body: message.message,
-          from: TWILIO_FROM_PHONE,
-          to: message.phone,
-        });
+        const response = await sendWhatsAppMessageForUser(userId, message.phone, message.message);
 
         return {
           customer: message.customer || message.phone,
           phone: message.phone,
           success: true,
-          sid: sentMessage.sid,
-          status: sentMessage.status,
+          id: response.id.id,
+          status: 'sent',
         };
       } catch (error) {
         return {
