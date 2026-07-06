@@ -7,16 +7,19 @@ import { Sparkles, Send, ArrowLeft, AlertCircle, CheckCircle2, User, Loader2 } f
 export default function NotificationSender() {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
+  const [sendError, setSendError] = useState(null);
   const [sendSuccess, setSendSuccess] = useState(false);
   const navigate = useNavigate();
 
+  const backendUrl = import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5000';
   const genAI = new GoogleGenerativeAI('AIzaSyAZ_kDwYZ6BSinhzoH-E6AojakoL9XKKPk');
 
   const customers = [
-    { name: 'John Doe', bookedRoom: 'Suite', preference: 'beach' },
-    { name: 'Jane Smith', bookedRoom: 'Double', preference: 'mountain' },
-    { name: 'Mark Johnson', bookedRoom: 'Single', preference: 'city' },
+    { name: 'John Doe', bookedRoom: 'Suite', preference: 'beach', phone: '+15555550101' },
+    { name: 'Jane Smith', bookedRoom: 'Double', preference: 'mountain', phone: '+15555550102' },
+    { name: 'Mark Johnson', bookedRoom: 'Single', preference: 'city', phone: '+15555550103' },
   ];
 
   const preferenceGradients = {
@@ -36,7 +39,13 @@ export default function NotificationSender() {
       try {
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const result = await model.generateContent(prompt);
-        generatedResponses.push({ customer: customer.name, room: customer.bookedRoom, preference: customer.preference, message: result.response.text() });
+        generatedResponses.push({
+          customer: customer.name,
+          room: customer.bookedRoom,
+          preference: customer.preference,
+          phone: customer.phone,
+          message: result.response.text(),
+        });
       } catch (err) {
         setError('Failed to generate message: ' + err.message);
       }
@@ -45,9 +54,45 @@ export default function NotificationSender() {
     setLoading(false);
   };
 
-  const handleSendMessage = () => {
-    setSendSuccess(true);
-    setTimeout(() => navigate('/'), 2000);
+  const handleSendMessage = async () => {
+    setSendError(null);
+    setSending(true);
+    setSendSuccess(false);
+
+    try {
+      const payload = {
+        messages: responses.map((res) => ({
+          customer: res.customer,
+          phone: res.phone,
+          message: res.message,
+        })),
+      };
+
+      const response = await fetch(`${backendUrl}/api/notifications/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send notifications.');
+      }
+
+      if (result.failedCount > 0) {
+        throw new Error(`Sent ${result.successCount} messages, ${result.failedCount} failed.`);
+      }
+
+      setSendSuccess(true);
+      setTimeout(() => navigate('/'), 2000);
+    } catch (err) {
+      setSendError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -136,9 +181,18 @@ export default function NotificationSender() {
                     <p className="text-sm font-semibold text-emerald-600">Messages sent successfully! Redirecting...</p>
                   </div>
                 ) : (
-                  <button onClick={handleSendMessage} className="w-full py-4 rounded-xl font-semibold text-base bg-gradient-to-r from-emerald-400 to-emerald-500 text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2">
-                    <Send className="w-5 h-5" /> Send All Messages
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={sending || responses.length === 0}
+                    className="w-full py-4 rounded-xl font-semibold text-base bg-gradient-to-r from-emerald-400 to-emerald-500 text-white shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    {sending ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending messages...</> : <><Send className="w-5 h-5" /> Send All Messages</>}
                   </button>
+                )}
+                {sendError && (
+                  <div className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600">
+                    {sendError}
+                  </div>
                 )}
               </div>
             </motion.div>
