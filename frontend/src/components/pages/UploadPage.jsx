@@ -158,10 +158,14 @@ export default function UploadPage({ user }) {
   const [campaignStatus, setCampaignStatus] = useState('Draft'); // 'Draft', 'Sending', 'Completed'
   const [isCampaignSending, setIsCampaignSending] = useState(false);
   const [campaignTrigger, setCampaignTrigger] = useState(null);
+  
+  // Side notification for negative growth
+  const [showPromoNotification, setShowPromoNotification] = useState(false);
 
   useEffect(() => {
     setCampaignStatus('Draft');
   }, [audienceSegment]);
+
 
   const triggerCampaign = () => {
     if (isCampaignSending) return;
@@ -191,6 +195,17 @@ export default function UploadPage({ user }) {
       localStorage.setItem('geoboost_parsed_data', JSON.stringify(parsedData));
     } else {
       localStorage.removeItem('geoboost_parsed_data');
+    }
+  }, [parsedData]);
+
+  useEffect(() => {
+    if (parsedData && parsedData.kpis && parsedData.kpis.growth_percent < 0) {
+      const timer = setTimeout(() => {
+        setShowPromoNotification(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowPromoNotification(false);
     }
   }, [parsedData]);
 
@@ -370,11 +385,14 @@ export default function UploadPage({ user }) {
 
   if (!parsedData) {
     return (
-      <div className="relative min-h-screen pt-24 pb-16 bg-gradient-hero flex flex-col items-center justify-center px-4">
-        {/* Background Decors */}
-        <div className="deco-circle deco-circle-cyan w-[400px] h-[400px] -top-20 -left-20 fixed" />
-        <div className="deco-circle deco-circle-blue w-[400px] h-[400px] bottom-0 -right-20 fixed" />
-        
+      <div className="relative min-h-screen pt-24 pb-16 flex flex-col items-center justify-center px-4 overflow-hidden"
+        style={{background: 'linear-gradient(180deg, #f0f9ff 0%, #ecfeff 40%, #ffffff 100%)'}}>
+        {/* Glowing light decorations */}
+        <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full pointer-events-none fixed"
+          style={{background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)'}} />
+        <div className="absolute bottom-0 -right-20 w-[400px] h-[400px] rounded-full pointer-events-none fixed"
+          style={{background: 'radial-gradient(circle, rgba(6,182,212,0.06) 0%, transparent 70%)'}} />
+
         <div className="w-full max-w-2xl glass-card p-6 sm:p-10 z-10 space-y-8">
           {/* Header */}
           <div className="text-center space-y-2">
@@ -384,14 +402,40 @@ export default function UploadPage({ user }) {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 font-display">
-              Initiate Tourism <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent">Analysis</span>
+              Predict Occupancy.{' '}<span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 bg-clip-text text-transparent">Boost Tourism.</span>
             </h1>
-            <p className="text-xs text-slate-400 font-semibold max-w-md mx-auto leading-relaxed">
-              Upload regional occupancy CSV data to run predictive models, evaluate regional risks, and generate strategic recommendations.
+            <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
+              Hotels upload past occupancy data. Our AI predicts future demand — and when it's low, automatically coordinates with tourism departments to run targeted campaigns and notify guests.
             </p>
           </div>
 
+          {/* How GeoBoost Works — Flow Strip */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">How GeoBoost Works</p>
+            <div className="flex items-start justify-between relative">
+              {/* Gradient connector line */}
+              <div className="absolute z-0 mx-6 animate-pulse" style={{top: '18px', left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #c7d2fe, #fde68a, #bbf7d0)'}} />
+              {[
+                { num: '01', icon: '📤', label: 'Hotel Uploads\nPast Occupancy',        bg: '#f5f3ff', border: '#c7d2fe', numColor: '#4f46e5' },
+                { num: '02', icon: '🤖', label: 'AI Predicts\nFuture Demand',            bg: '#ecfeff', border: '#a5f3fc', numColor: '#0891b2' },
+                { num: '03', icon: '📉', label: 'Low Occupancy\nAlert Triggered',         bg: '#fffbeb', border: '#fde68a', numColor: '#d97706' },
+                { num: '04', icon: '📢', label: 'Tourism Dept.\nLaunches Campaign',       bg: '#fff1f2', border: '#fecdd3', numColor: '#e11d48' },
+                { num: '05', icon: '📱', label: 'Guests Receive\nPersonal Notification',  bg: '#f0fdf4', border: '#bbf7d0', numColor: '#16a34a' },
+              ].map((step, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5 z-10 flex-1">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm shadow-sm ring-4 ring-white transition-transform hover:scale-110 duration-300"
+                    style={{backgroundColor: step.bg, border: `1.5px solid ${step.border}`}}>
+                    {step.icon}
+                  </div>
+                  <span className="text-[8px] font-extrabold tracking-widest" style={{color: step.numColor}}>{step.num}</span>
+                  <p className="text-[9px] font-semibold text-slate-500 text-center leading-snug whitespace-pre-line">{step.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Large Upload Box */}
+
           <div
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
@@ -521,18 +565,20 @@ export default function UploadPage({ user }) {
         </div>
         
         {/* Solution Overview Footer */}
-        <div className="mt-8 text-center text-[10px] text-slate-400 font-medium z-10">
-          GeoBoost solution is powered by Google Vertex AI dedicated predictive models.
+        <div className="mt-8 text-center text-[10px] font-medium z-10" style={{color: 'rgba(255,255,255,0.25)'}}>
+          GeoBoost is powered by Google Vertex AI dedicated predictive models.
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen pt-24 pb-12 bg-gradient-hero">
+    <div className="relative min-h-screen pt-24 pb-12" style={{background: 'linear-gradient(160deg, #f0f4ff 0%, #e8f0fe 25%, #fdf4ff 60%, #f0fdf4 100%)'}}>
       {/* Background Decors */}
-      <div className="deco-circle deco-circle-cyan w-[400px] h-[400px] -top-20 -right-20 fixed" />
-      <div className="deco-circle deco-circle-blue w-[400px] h-[400px] bottom-0 -left-20 fixed" />
+      <div className="absolute -top-10 -right-10 w-[450px] h-[450px] rounded-full pointer-events-none fixed"
+        style={{background: 'radial-gradient(circle, rgba(99,102,241,0.09) 0%, transparent 65%)'}} />
+      <div className="absolute bottom-0 -left-10 w-[350px] h-[350px] rounded-full pointer-events-none fixed"
+        style={{background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 65%)'}} />
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
@@ -864,20 +910,66 @@ export default function UploadPage({ user }) {
               </div>
 
               {campaignTrigger && (
-                <div className={`col-span-12 rounded-xl p-5 border ${lowOccupancyAlert ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider ${lowOccupancyAlert ? 'text-amber-700' : 'text-emerald-700'}`}>
-                        {lowOccupancyAlert ? 'Low Occupancy Detected' : 'No Campaign Needed'}
-                      </p>
-                      <h4 className="text-sm font-bold text-slate-800 mt-1">{campaignTrigger.trigger_reason}</h4>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{campaignTrigger.suggested_message}</p>
+                <div className="col-span-12 rounded-2xl overflow-hidden shadow-md"
+                  style={{border: `2px solid ${lowOccupancyAlert ? '#fbbf24' : '#34d399'}`}}>
+
+                  {/* Coloured header bar */}
+                  <div className="px-5 py-3.5 flex items-center gap-3"
+                    style={{background: lowOccupancyAlert
+                      ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                      : 'linear-gradient(90deg, #10b981, #06b6d4)'}}>
+                    <span className="text-white font-extrabold text-sm">
+                      {lowOccupancyAlert ? '⚠️  Occupancy Downfall Predicted — Action Required' : '🎉  Strong Occupancy Predicted — Looking Good'}
+                    </span>
+                    <span className="ml-auto text-[10px] bg-white/20 text-white font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                      {lowOccupancyAlert ? 'Intervention Needed' : 'On Track'}
+                    </span>
+                  </div>
+
+                  {/* Body */}
+                  <div className={`p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-5 ${lowOccupancyAlert ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-slate-800">{campaignTrigger.trigger_reason}</h4>
+                      <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed max-w-lg">{campaignTrigger.suggested_message}</p>
+
+                      {lowOccupancyAlert ? (
+                        <>
+                          <p className="text-[11px] text-amber-700 font-semibold mt-2 leading-relaxed">
+                            → Coordinate with the Tourism Department: advertise local events and send personalised WhatsApp promotions directly to guests.
+                          </p>
+                          <div className="flex gap-2 mt-3 flex-wrap">
+                            <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-lg font-bold">📢 Tourism Dept. Alert</span>
+                            <span className="text-[10px] bg-orange-100 text-orange-700 border border-orange-200 px-2.5 py-1 rounded-lg font-bold">📱 WhatsApp Promotions</span>
+                            <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg font-bold">🎟️ Event Advertising</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[11px] text-emerald-700 font-semibold mt-2 leading-relaxed">
+                            → Occupancy looks strong. Consider premium upsell campaigns and loyalty outreach to maximise revenue this period.
+                          </p>
+                          <div className="flex gap-2 mt-3 flex-wrap">
+                            <span className="text-[10px] bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold">💎 Premium Upsell</span>
+                            <span className="text-[10px] bg-teal-100 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-lg font-bold">📊 Revenue Optimise</span>
+                            <span className="text-[10px] bg-cyan-100 text-cyan-700 border border-cyan-200 px-2.5 py-1 rounded-lg font-bold">⭐ Guest Loyalty</span>
+                          </div>
+                        </>
+                      )}
                     </div>
+
                     <button
                       onClick={() => navigate('/NotificationSender')}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${lowOccupancyAlert ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+                      className="shrink-0 px-5 py-3 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap text-white hover:-translate-y-0.5"
+                      style={{
+                        background: lowOccupancyAlert
+                          ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+                          : 'linear-gradient(135deg, #10b981, #06b6d4)',
+                        boxShadow: lowOccupancyAlert
+                          ? '0 4px 15px rgba(245,158,11,0.4)'
+                          : '0 4px 15px rgba(16,185,129,0.4)'
+                      }}
                     >
-                      {lowOccupancyAlert ? 'Launch Tourism Campaign' : 'Open Messaging Center'}
+                      {lowOccupancyAlert ? '📱 Launch WhatsApp Campaign →' : '💬 Send Upsell Messages →'}
                     </button>
                   </div>
                 </div>
@@ -1065,6 +1157,61 @@ export default function UploadPage({ user }) {
             ))}
           </div>
         </div>
+
+        {/* Floating Side Occupancy Alert Notification */}
+        <AnimatePresence>
+          {showPromoNotification && (
+            <motion.div
+              initial={{ opacity: 0, x: 100, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 100, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-white rounded-2xl border-l-4 border-amber-500 overflow-hidden flex flex-col pointer-events-auto"
+              style={{
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                borderLeftWidth: '5px'
+              }}
+            >
+              <div className="p-4 flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center shrink-0 text-lg border border-amber-100 animate-bounce">
+                  📉
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">Occupancy Downfall Alert</span>
+                    <button
+                      onClick={() => setShowPromoNotification(false)}
+                      className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-full hover:bg-slate-100"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                    Growth rate is currently at <span className="font-extrabold text-rose-600">{activeData?.kpis?.growth_percent}%</span>. 
+                    AI suggests launching regional events & sending WhatsApp advertisements immediately to prevent vacancy.
+                  </p>
+                </div>
+              </div>
+              <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  onClick={() => setShowPromoNotification(false)}
+                  className="px-3 py-1.5 text-[10px] font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPromoNotification(false);
+                    navigate('/NotificationSender');
+                  }}
+                  className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-lg text-[10px] font-bold transition-all shadow-md shadow-amber-500/10 flex items-center gap-1.5"
+                >
+                  <Send className="w-3 h-3" /> Advertise via WhatsApp
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </div>
