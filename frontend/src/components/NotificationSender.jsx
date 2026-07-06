@@ -5,13 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, Send, ArrowLeft, AlertCircle, CheckCircle2, User, Loader2, Upload } from 'lucide-react';
 import WhatsAppConnector from './WhatsAppConnector';
 
-export default function NotificationSender() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const s = localStorage.getItem('geoboost_user');
-      return s ? JSON.parse(s) : null;
-    } catch { return null; }
-  });
+export default function NotificationSender({ user }) {
   const [isWhatsAppConnected, setIsWhatsAppConnected] = useState(false);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -21,7 +15,7 @@ export default function NotificationSender() {
   const [sendSuccess, setSendSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const rawUserId = currentUser ? (currentUser.email || currentUser.name || 'guest_user') : 'guest_user';
+  const rawUserId = user ? (user.email || user.name || 'guest_user') : 'guest_user';
   const userId = rawUserId.replace(/[^\w-]/g, '_');
 
   const backendUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
@@ -143,7 +137,7 @@ export default function NotificationSender() {
     for (const customer of customers) {
       const prompt = `Create a friendly marketing message for ${customer.name}, who booked a ${customer.bookedRoom} room and prefers ${customer.preference} trips, inviting them to visit again. Keep it under 120 characters, plain text only, absolutely NO emojis, and NO newlines.`;
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
         const result = await model.generateContent(prompt);
         generatedResponses.push({
           customer: customer.name,

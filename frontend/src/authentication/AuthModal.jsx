@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, Zap, LogIn, MapPin, Globe, BarChart3 } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 /* =============================================
    LOGIN FORM
@@ -19,34 +20,105 @@ function LoginForm({ onLogin, onSwitchToSignup }) {
     setError('');
   }
 
-  function handleGoogleLogin() {
-    setLoading(true);
-    setError('');
-    // Simulate Google Login resolving to solution challenge credentials
-    setTimeout(() => {
-      const user = { name: 'Google Demo User', email: 'teamdsa@gmail.com', provider: 'google' };
-      localStorage.setItem('geoboost_user', JSON.stringify(user));
-      onLogin(user);
-      setLoading(false);
-    }, 600);
-  }
+  const backendUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
 
-  function handleSubmit(e) {
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      setError('');
+      try {
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+        });
+        const userInfo = await userInfoResponse.json();
+
+        const res = await fetch(`${backendUrl}/api/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_token: tokenResponse.access_token,
+            email: userInfo.email,
+            name: userInfo.name,
+            sub: userInfo.sub
+          })
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+          throw new Error(result.message || 'Google verification failed.');
+        }
+
+        const userData = {
+          name: result.user.username,
+          email: result.user.email,
+          id: result.user.id,
+          role: result.user.role
+        };
+
+        localStorage.setItem('geoboost_user', JSON.stringify(userData));
+        onLogin(userData);
+      } catch (err) {
+        setError(err.message || 'Google Login failed.');
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => {
+      setError('Google Login window was closed or failed.');
+      setLoading(false);
+    }
+  });
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // Simulate login
-    setTimeout(() => {
-      if (email && password) {
-        const user = { name: email.split('@')[0], email };
-        localStorage.setItem('geoboost_user', JSON.stringify(user));
-        onLogin(user);
-      } else {
-        setError('Please fill in all fields');
+    try {
+      let response = await fetch(`${backendUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      let result = await response.json();
+
+      // Auto-register demo account if it doesn't exist yet on a fresh DB
+      if (!response.ok && email === 'demo@geoboost.ai' && password === 'demo123') {
+        const regRes = await fetch(`${backendUrl}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: 'demo', email, password })
+        });
+
+        if (regRes.ok) {
+          response = await fetch(`${backendUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          result = await response.json();
+        }
       }
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Invalid credentials. Please check email/password.');
+      }
+
+      const userData = {
+        name: result.user.username,
+        email: result.user.email,
+        id: result.user.id,
+        role: result.user.role
+      };
+
+      localStorage.setItem('geoboost_user', JSON.stringify(userData));
+      onLogin(userData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
@@ -170,19 +242,40 @@ function SignupForm({ onSignup, onSwitchToLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  const backendUrl = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:5000';
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    setTimeout(() => {
-      if (name && email && password) {
-        onSignup();
-      } else {
-        setError('Please fill in all fields');
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: name, email, password })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Registration failed.');
       }
+
+      const userData = {
+        name: result.user.username,
+        email: result.user.email,
+        id: result.user.id,
+        role: result.user.role
+      };
+
+      localStorage.setItem('geoboost_user', JSON.stringify(userData));
+      onSignup(userData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
@@ -228,8 +321,9 @@ export default function AuthModal({ isOpen, onClose, onLogin }) {
     onClose();
   }
 
-  function handleSignup() {
-    setMode('login');
+  function handleSignup(user) {
+    onLogin(user);
+    onClose();
   }
 
   return (

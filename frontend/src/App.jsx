@@ -25,7 +25,7 @@ function PageTransition({ children }) {
   );
 }
 
-function AnimatedRoutes() {
+function AnimatedRoutes({ user }) {
   const location = useLocation();
 
   return (
@@ -34,11 +34,11 @@ function AnimatedRoutes() {
         <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
         <Route path="/features" element={<PageTransition><FeaturesPage /></PageTransition>} />
         <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
-        <Route path="/upload" element={<PageTransition><UploadPage /></PageTransition>} />
+        <Route path="/upload" element={<PageTransition><UploadPage user={user} /></PageTransition>} />
         <Route path="/CampaignUploader" element={<PageTransition><CampaignUploader /></PageTransition>} />
         <Route path="/campaigns" element={<PageTransition><CampaignDetails /></PageTransition>} />
         <Route path="/CampaignDetails" element={<PageTransition><CampaignDetails /></PageTransition>} />
-        <Route path="/NotificationSender" element={<PageTransition><NotificationSender /></PageTransition>} />
+        <Route path="/NotificationSender" element={<PageTransition><NotificationSender user={user} /></PageTransition>} />
       </Routes>
     </AnimatePresence>
   );
@@ -75,7 +75,7 @@ function App() {
           onLogout={handleLogout}
         />
         <main className="flex-1">
-          <AnimatedRoutes />
+          <AnimatedRoutes user={user} />
         </main>
         <Footer />
 
