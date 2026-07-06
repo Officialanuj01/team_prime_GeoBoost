@@ -15,8 +15,8 @@ exports.connectWhatsApp = async (req, res) => {
   }
 
   try {
-    initClientForUser(userId);
-    res.json({ message: `Initializing WhatsApp Client session for User ${userId}.` });
+    await initClientForUser(userId);
+    res.json({ message: `WhatsApp Client session for User ${userId} initialized successfully.` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -28,6 +28,13 @@ exports.getWhatsAppQr = async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'Missing userId in query parameters.' });
   }
+
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
 
   const qrString = getQrForUser(userId);
   if (!qrString) {
@@ -52,6 +59,13 @@ exports.getWhatsAppStatus = async (req, res) => {
   if (!userId) {
     return res.status(400).json({ error: 'Missing userId in query parameters.' });
   }
+
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+    'Surrogate-Control': 'no-store'
+  });
 
   const status = getStatusForUser(userId);
   res.json({ status });

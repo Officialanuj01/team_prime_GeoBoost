@@ -150,7 +150,7 @@ export default function WhatsAppConnector({ userId, onConnectionChange }) {
             ? 'bg-blue-50 text-blue-600 ring-blue-500/25 animate-pulse'
             : 'bg-slate-50 text-slate-500 ring-slate-500/10'
         }`}>
-          {status === 'ready' ? 'Connected' : status === 'qr_ready' ? 'Ready to Scan' : status === 'loading' ? 'Initializing' : 'Disconnected'}
+          {status === 'ready' ? 'Connected' : status === 'qr_ready' ? 'Ready to Scan' : status === 'loading' ? 'Initializing' : 'Unlinked'}
         </span>
       </div>
 
@@ -165,6 +165,10 @@ export default function WhatsAppConnector({ userId, onConnectionChange }) {
               <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
                 Connect your account to send custom campaigns directly from your phone. Clicking below will load a QR connection code to scan.
               </p>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 mx-auto w-fit">
+              <span className="w-2 h-2 rounded-full bg-slate-400" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status: Unlinked</span>
             </div>
             <button onClick={handleConnect} className="btn-glow !px-8 py-3 mx-auto">
               Get QR Code
@@ -188,8 +192,26 @@ export default function WhatsAppConnector({ userId, onConnectionChange }) {
               {qrDataUrl ? (
                 <img src={qrDataUrl} alt="WhatsApp Web QR Code" className="w-full h-full" />
               ) : (
-                <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+                // Sample QR placeholder for demo/presentation
+                <img
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://web.whatsapp.com&bgcolor=ffffff&color=000000&margin=4"
+                  alt="Sample WhatsApp QR Code"
+                  className="w-full h-full rounded-lg"
+                  onError={(e) => {
+                    // Fallback if network unavailable: show a styled placeholder
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
               )}
+              <div style={{display:'none'}} className="w-full h-full flex flex-col items-center justify-center gap-2">
+                <div className="grid grid-cols-5 gap-0.5 opacity-30">
+                  {Array.from({length:25}).map((_,i)=>(
+                    <div key={i} className={`w-3 h-3 rounded-[2px] ${Math.random()>0.5?'bg-slate-800':'bg-transparent'}`}/>
+                  ))}
+                </div>
+                <span className="text-[9px] text-slate-400 font-bold">SAMPLE QR</span>
+              </div>
             </div>
             <div className="space-y-3.5 text-center md:text-left">
               <h3 className="font-semibold text-slate-800 text-sm">Scan with your WhatsApp App</h3>

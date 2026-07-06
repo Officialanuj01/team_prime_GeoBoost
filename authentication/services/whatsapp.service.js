@@ -2,6 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcodeTerminal = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const clients = {};
 const statuses = {};
@@ -12,7 +13,7 @@ const sanitizeId = (userId) => {
   return userId.replace(/[^\w-]/g, '_');
 };
 
-const initClientForUser = (rawUserId) => {
+const initClientForUser = async (rawUserId) => {
   const userId = sanitizeId(rawUserId);
   
   if (clients[userId]) {
@@ -20,24 +21,33 @@ const initClientForUser = (rawUserId) => {
   }
 
   console.log(`Initializing WhatsApp Client for User: ${userId}`);
+
+  // Chromium Launch Diagnostics
+  try {
+    const whichChromium = execSync('which chromium 2>&1').toString().trim();
+    console.log(`Chromium path: ${whichChromium}`);
+    const chromiumVersion = execSync('chromium --version 2>&1').toString().trim();
+    console.log(`Chromium version: ${chromiumVersion}`);
+  } catch (e) {
+    console.error('Chromium launch check failed:', e.message);
+  }
+
   statuses[userId] = 'loading';
   qrs[userId] = null;
 
   const client = new Client({
     authStrategy: new LocalAuth({ clientId: userId }),
     puppeteer: {
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       headless: true,
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage"
       ]
-    }
+    },
+    userAgent:
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
   });
 
   client.on('qr', (qr) => {
@@ -45,6 +55,19 @@ const initClientForUser = (rawUserId) => {
     qrs[userId] = qr;
     statuses[userId] = 'qr_ready';
     qrcodeTerminal.generate(qr, { small: true });
+  });
+
+  client.on('authenticated', () => {
+    console.log(`Authenticated User ${userId}`);
+    statuses[userId] = 'authenticated';
+  });
+
+  client.on('loading_screen', (percent, msg) => {
+    console.log(`Loading screen for User ${userId}: ${percent}% - ${msg}`);
+  });
+
+  client.on('change_state', (state) => {
+    console.log(`State change for User ${userId}: ${state}`);
   });
 
   client.on('ready', () => {
@@ -68,7 +91,16 @@ const initClientForUser = (rawUserId) => {
   });
 
   clients[userId] = client;
-  client.initialize();
+
+  try {
+    await client.initialize();
+  } catch (err) {
+    console.error(`Failed to initialize WhatsApp client for ${userId}:`, err);
+    statuses[userId] = 'failed';
+    qrs[userId] = null;
+    delete clients[userId];
+    throw err;
+  }
 };
 
 const sendWhatsAppMessageForUser = async (rawUserId, toPhone, body) => {

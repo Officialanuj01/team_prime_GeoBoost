@@ -56,6 +56,16 @@ class BusinessActions(BaseModel):
     inventory: str
     marketing: str
 
+
+class CampaignTrigger(BaseModel):
+    should_launch_campaign: bool
+    trigger_reason: str
+    threshold: float
+    average_occupancy: float
+    low_occupancy_days: int
+    recommended_channel: str
+    suggested_message: str
+
 class ForecastResponse(BaseModel):
     forecast: List[ForecastItem]
     records_analyzed: int
@@ -63,6 +73,7 @@ class ForecastResponse(BaseModel):
     summary: str  # Maps to Gemini's summary
     daily_insights: List[MergedDailyInsight]
     business_actions: BusinessActions
+    campaign_trigger: CampaignTrigger
 
 
 

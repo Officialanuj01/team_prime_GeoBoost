@@ -7,6 +7,9 @@ const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
+// Disable ETags globally to prevent browser caching of API responses (like status/qr)
+app.set('etag', false);
+
 // Middleware
 app.use(cors({
     origin: true, // Allow all origins for now (development only)
@@ -32,11 +35,8 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/Pulse', {
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-const { initExistingSessions } = require('./services/whatsapp.service');
-
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-    initExistingSessions();
 });
