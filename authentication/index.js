@@ -7,6 +7,9 @@ const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 
+// Disable ETags globally to prevent browser caching of API responses (like status/qr)
+app.set('etag', false);
+
 // Middleware
 app.use(cors({
     origin: true, // Allow all origins for now (development only)
