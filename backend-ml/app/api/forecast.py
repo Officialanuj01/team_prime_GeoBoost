@@ -2,12 +2,14 @@
 from fastapi import APIRouter, UploadFile, File
 import asyncio
 from datetime import datetime
-from app.models import ForecastResponse, ForecastItem, KPIs, MergedDailyInsight, BusinessActions
+from app.models import ForecastResponse, ForecastItem, KPIs, MergedDailyInsight, BusinessActions, CampaignTrigger
 from app.services.csv_service import CSVService
 from app.services.vertex_service import VertexService
 from app.services.gemini_service import GeminiService
 
 router = APIRouter()
+
+LOW_OCCUPANCY_THRESHOLD = 70.0
 
 # Instantiate services
 csv_service = CSVService()
@@ -124,6 +126,29 @@ async def forecast_occupancy(file: UploadFile = File(...)):
         growth_percent = 0.0
         trend_str = "Stable"
 
+    low_occupancy_days = sum(1 for item in forecast_items if item["predicted_occupancy"] < LOW_OCCUPANCY_THRESHOLD)
+    should_launch_campaign = avg_occ < LOW_OCCUPANCY_THRESHOLD or low_occupancy_days >= 3
+    trigger_reason = (
+        f"Average forecast occupancy is {avg_occ}% with {low_occupancy_days} low-demand days below {LOW_OCCUPANCY_THRESHOLD}%."
+        if should_launch_campaign
+        else f"Average forecast occupancy remains at {avg_occ}%, above the campaign threshold of {LOW_OCCUPANCY_THRESHOLD}%."
+    )
+    suggested_message = (
+        "Coordinate with the tourism department to launch event-led promotions and send personalized customer offers."
+        if should_launch_campaign
+        else "Maintain standard outreach and pricing strategy."
+    )
+
+    campaign_trigger = CampaignTrigger(
+        should_launch_campaign=should_launch_campaign,
+        trigger_reason=trigger_reason,
+        threshold=LOW_OCCUPANCY_THRESHOLD,
+        average_occupancy=avg_occ,
+        low_occupancy_days=low_occupancy_days,
+        recommended_channel="WhatsApp + SMS + local tourism promotions",
+        suggested_message=suggested_message,
+    )
+
     kpis = KPIs(
         average_occupancy=avg_occ,
         peak_occupancy=peak_occ,
@@ -239,6 +264,7 @@ async def forecast_occupancy(file: UploadFile = File(...)):
             staffing=gemini_insights.business_actions.staffing,
             inventory=gemini_insights.business_actions.inventory,
             marketing=gemini_insights.business_actions.marketing
-        )
+        ),
+        campaign_trigger=campaign_trigger,
     )
 

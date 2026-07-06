@@ -32,6 +32,38 @@ export default function NotificationSender({ user }) {
   const [manualPreference, setManualPreference] = useState('beach');
 
   useEffect(() => {
+    try {
+      const rawContext = localStorage.getItem('geoboost_campaign_context');
+      if (!rawContext) return;
+
+      const campaignContext = JSON.parse(rawContext);
+      if (!campaignContext?.should_launch_campaign && !campaignContext?.forecast) return;
+
+      const forecastCustomers = (campaignContext.forecast || []).slice(0, 3).map((row, index) => ({
+        name: `Guest ${index + 1}`,
+        phone: index === 0 ? '+919755500507' : index === 1 ? '+919755500508' : '+919755500509',
+        bookedRoom: row.predicted_occupancy >= 80 ? 'Suite' : row.predicted_occupancy >= 70 ? 'Double' : 'Single',
+        preference: row.predicted_occupancy >= 80 ? 'city' : row.predicted_occupancy >= 70 ? 'mountain' : 'beach',
+      }));
+
+      if (forecastCustomers.length > 0) {
+        setInputMethod('csv');
+        setCustomers(forecastCustomers);
+        setResponses(forecastCustomers.map((customer) => ({
+          customer: customer.name,
+          room: customer.bookedRoom,
+          preference: customer.preference,
+          phone: customer.phone,
+          message: campaignContext.suggested_message,
+        })));
+        setError(null);
+      }
+    } catch {
+      localStorage.removeItem('geoboost_campaign_context');
+    }
+  }, []);
+
+  useEffect(() => {
     if (inputMethod === 'manual') {
       const defaultMsg = `Hi ${manualName || 'Valued Customer'}, thank you for booking a ${manualRoom} room with us. We have a special offer for your preferred ${manualPreference} trips!`;
       setCustomers([
@@ -167,6 +199,13 @@ export default function NotificationSender({ user }) {
           phone: res.phone,
           message: res.message,
         })),
+        campaignContext: (() => {
+          try {
+            return JSON.parse(localStorage.getItem('geoboost_campaign_context') || 'null');
+          } catch {
+            return null;
+          }
+        })(),
       };
 
       const response = await fetch(`${backendUrl}/api/notifications/send`, {
@@ -305,7 +344,7 @@ export default function NotificationSender({ user }) {
               />
             </div>
             {customers.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-slate-500 font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 p-2.5 rounded-lg">
+              <div className="flex items-center justify-between text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 p-2.5 rounded-lg">
                 <span>Parsed {customers.length} customer(s) successfully!</span>
                 <button onClick={() => setCustomers([])} className="text-emerald-900 hover:underline">Clear</button>
               </div>

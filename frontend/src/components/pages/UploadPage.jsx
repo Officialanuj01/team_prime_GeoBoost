@@ -157,6 +157,7 @@ export default function UploadPage({ user }) {
   const [messageTemplate, setMessageTemplate] = useState('Festival Offer Template');
   const [campaignStatus, setCampaignStatus] = useState('Draft'); // 'Draft', 'Sending', 'Completed'
   const [isCampaignSending, setIsCampaignSending] = useState(false);
+  const [campaignTrigger, setCampaignTrigger] = useState(null);
 
   useEffect(() => {
     setCampaignStatus('Draft');
@@ -267,9 +268,11 @@ export default function UploadPage({ user }) {
   const clearAll = () => {
     setUploadedFile(null);
     setParsedData(null);
+    setCampaignTrigger(null);
     setError(null);
     setRetryAttempt(0);
     setRetryCountdown(null);
+    localStorage.removeItem('geoboost_campaign_context');
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
@@ -335,6 +338,22 @@ export default function UploadPage({ user }) {
       }
       const data = await res.json();
       setParsedData(data);
+      setCampaignTrigger(data.campaign_trigger || null);
+      if (data.campaign_trigger?.should_launch_campaign) {
+        localStorage.setItem('geoboost_campaign_context', JSON.stringify({
+          should_launch_campaign: true,
+          trigger_reason: data.campaign_trigger.trigger_reason,
+          threshold: data.campaign_trigger.threshold,
+          average_occupancy: data.campaign_trigger.average_occupancy,
+          low_occupancy_days: data.campaign_trigger.low_occupancy_days,
+          recommended_channel: data.campaign_trigger.recommended_channel,
+          suggested_message: data.campaign_trigger.suggested_message,
+          forecast: data.forecast,
+          daily_insights: data.daily_insights,
+        }));
+      } else {
+        localStorage.removeItem('geoboost_campaign_context');
+      }
       setRetryAttempt(0);
       setRetryCountdown(null);
     } catch (e) {
@@ -347,6 +366,7 @@ export default function UploadPage({ user }) {
   // Determine active dataset (dynamic uploaded data vs exact screenshot preview data)
   // Determine active dataset
   const activeData = parsedData;
+  const lowOccupancyAlert = campaignTrigger?.should_launch_campaign;
 
   if (!parsedData) {
     return (
@@ -842,6 +862,26 @@ export default function UploadPage({ user }) {
                   <p className="text-[11px] leading-relaxed text-indigo-100/90">{activeData.summary}</p>
                 </div>
               </div>
+
+              {campaignTrigger && (
+                <div className={`col-span-12 rounded-xl p-5 border ${lowOccupancyAlert ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <p className={`text-[10px] font-bold uppercase tracking-wider ${lowOccupancyAlert ? 'text-amber-700' : 'text-emerald-700'}`}>
+                        {lowOccupancyAlert ? 'Low Occupancy Detected' : 'No Campaign Needed'}
+                      </p>
+                      <h4 className="text-sm font-bold text-slate-800 mt-1">{campaignTrigger.trigger_reason}</h4>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{campaignTrigger.suggested_message}</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/NotificationSender')}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${lowOccupancyAlert ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
+                    >
+                      {lowOccupancyAlert ? 'Launch Tourism Campaign' : 'Open Messaging Center'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Box 4: 7-Day Forecast & Detailed Insights Accordion */}
               <div className="col-span-12 xl:col-span-6 glass-card p-5 space-y-4">
