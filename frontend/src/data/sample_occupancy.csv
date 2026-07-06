@@ -1,0 +1,21 @@
+date,occupancy,hotel_tier,room_type,region,hotel_id,holiday,festival,promotion,weekday,special_event,discount_percentage,temperature
+2026-06-19,58,Budget,Standard Room,Aspen,H-003,None,None,None,Friday,None,0,66
+2026-06-20,67,Budget,Family Room,Aspen,H-003,None,None,Weekend Saver,Saturday,None,12,67
+2026-06-21,64,Budget,Family Room,Aspen,H-003,None,None,Weekend Saver,Sunday,None,12,68
+2026-06-22,56,Business,Standard Room,NYC,H-006,None,None,Corporate Rate,Monday,None,5,79
+2026-06-23,63,Business,King Room,NYC,H-006,None,None,Corporate Rate,Tuesday,Tech Meetup,8,80
+2026-06-24,71,Business,Executive Suite,NYC,H-006,None,None,Midweek Business Deal,Wednesday,Tech Conference,10,81
+2026-06-25,78,Business,Executive Suite,NYC,H-006,None,None,None,Thursday,Business Summit,0,82
+2026-06-26,86,Boutique,Mountain View,Napa,H-004,None,Wine Harvest,Wine Harvest Special,Friday,Wine Tasting,18,76
+2026-06-27,91,Boutique,Vineyard Suite,Napa,H-004,None,Wine Harvest,Wine Harvest Special,Saturday,Wine Festival,20,78
+2026-06-28,87,Boutique,Vineyard Suite,Napa,H-004,None,Wine Harvest,None,Sunday,Food & Wine Expo,10,79
+2026-06-29,70,Luxury,Deluxe Suite,Tahoe,H-001,None,None,Summer Escape,Monday,None,10,73
+2026-06-30,74,Luxury,Deluxe Suite,Tahoe,H-001,None,None,Summer Escape,Tuesday,None,12,74
+2026-07-01,78,Luxury,Executive Suite,Tahoe,H-001,None,None,Premium Stay,Wednesday,None,10,75
+2026-07-02,82,Luxury,Executive Suite,Tahoe,H-001,None,None,Early Summer Offer,Thursday,None,15,77
+2026-07-03,88,Luxury,Presidential Suite,Tahoe,H-001,None,None,Weekend Escape,Friday,Live Music Night,18,79
+2026-07-04,97,Luxury,Presidential Suite,Tahoe,H-001,Independence Day,None,Independence Day Sale,Saturday,Fireworks Concert,25,85
+2026-07-05,95,Resort,Ocean View,Miami,H-005,None,None,Holiday Getaway,Sunday,Beach Festival,20,87
+2026-07-06,86,Resort,Ocean View,Miami,H-005,None,None,Family Vacation,Monday,None,15,86
+2026-07-07,89,Resort,Penthouse Suite,Miami,H-005,None,None,Luxury Retreat,Tuesday,None,12,87
+2026-07-08,93,Resort,Penthouse Suite,Miami,H-005,None,None,Summer Luxury Package,Wednesday,Music Festival,15,88

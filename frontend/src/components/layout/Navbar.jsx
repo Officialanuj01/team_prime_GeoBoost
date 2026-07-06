@@ -95,6 +95,7 @@ export default function Navbar({ user, onLoginClick, onLogout }) {
                     {user.name?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                   <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">{user.name}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                 </div>
                 <button
                   onClick={onLogout}
@@ -159,6 +160,7 @@ export default function Navbar({ user, onLoginClick, onLogout }) {
                         {user.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <span className="text-sm font-medium text-gray-700">{user.name}</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                     </div>
                     <button onClick={onLogout} className="text-sm text-red-500"><LogOut className="w-4 h-4" /></button>
                   </div>
