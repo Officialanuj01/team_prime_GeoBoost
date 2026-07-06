@@ -32,6 +32,38 @@ export default function NotificationSender({ user }) {
   const [manualPreference, setManualPreference] = useState('beach');
 
   useEffect(() => {
+    try {
+      const rawContext = localStorage.getItem('geoboost_campaign_context');
+      if (!rawContext) return;
+
+      const campaignContext = JSON.parse(rawContext);
+      if (!campaignContext?.should_launch_campaign && !campaignContext?.forecast) return;
+
+      const forecastCustomers = (campaignContext.forecast || []).slice(0, 3).map((row, index) => ({
+        name: `Guest ${index + 1}`,
+        phone: index === 0 ? '+919755500507' : index === 1 ? '+919755500508' : '+919755500509',
+        bookedRoom: row.predicted_occupancy >= 80 ? 'Suite' : row.predicted_occupancy >= 70 ? 'Double' : 'Single',
+        preference: row.predicted_occupancy >= 80 ? 'city' : row.predicted_occupancy >= 70 ? 'mountain' : 'beach',
+      }));
+
+      if (forecastCustomers.length > 0) {
+        setInputMethod('csv');
+        setCustomers(forecastCustomers);
+        setResponses(forecastCustomers.map((customer) => ({
+          customer: customer.name,
+          room: customer.bookedRoom,
+          preference: customer.preference,
+          phone: customer.phone,
+          message: campaignContext.suggested_message,
+        })));
+        setError(null);
+      }
+    } catch {
+      localStorage.removeItem('geoboost_campaign_context');
+    }
+  }, []);
+
+  useEffect(() => {
     if (inputMethod === 'manual') {
       const defaultMsg = `Hi ${manualName || 'Valued Customer'}, thank you for booking a ${manualRoom} room with us. We have a special offer for your preferred ${manualPreference} trips!`;
       setCustomers([
@@ -167,6 +199,13 @@ export default function NotificationSender({ user }) {
           phone: res.phone,
           message: res.message,
         })),
+        campaignContext: (() => {
+          try {
+            return JSON.parse(localStorage.getItem('geoboost_campaign_context') || 'null');
+          } catch {
+            return null;
+          }
+        })(),
       };
 
       const response = await fetch(`${backendUrl}/api/notifications/send`, {
@@ -205,19 +244,44 @@ export default function NotificationSender({ user }) {
       <div className="section-container max-w-3xl relative z-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
           <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-gray-400 hover:text-primary-600 transition-colors mb-6">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </button>
-          <span className="badge mb-4 inline-flex"><Sparkles className="w-3 h-3 mr-1.5" /> AI Message Generator</span>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Personalized Outreach</h1>
-          <p className="text-gray-500 text-lg">Generate AI-crafted marketing messages tailored to each customer.</p>
+
+          {/* Journey breadcrumb */}
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">GeoBoost Flow</span>
+            {['AI Forecast', 'Low Occupancy Alert', 'Tourism Coordination', 'Guest Notifications'].map((s, i, arr) => (
+              <span key={i} className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold ${i === arr.length - 1 ? 'text-indigo-600' : 'text-slate-400'}`}>{s}</span>
+                {i < arr.length - 1 && <span className="text-slate-200 text-xs">›</span>}
+              </span>
+            ))}
+          </div>
+
+          <span className="badge mb-3 inline-flex"><Sparkles className="w-3 h-3 mr-1.5" /> Step 4 of 4 — Guest Outreach</span>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Send Personalised Notifications</h1>
+          <p className="text-gray-500 text-base leading-relaxed max-w-xl">
+            Low occupancy has been detected. Coordinate with the Tourism Department — generate AI-crafted messages tailored to each guest and deliver them via WhatsApp.
+          </p>
         </motion.div>
 
         <div className="mb-8">
           <WhatsAppConnector userId={userId} onConnectionChange={setIsWhatsAppConnected} />
         </div>
 
-        {isWhatsAppConnected && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          {/* WhatsApp Not Linked Banner */}
+          {!isWhatsAppConnected && (
+            <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-800">WhatsApp Status: <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-200 text-amber-700 text-[10px] font-bold uppercase tracking-wider ml-1">Unlinked</span></p>
+                <p className="text-[11px] text-amber-600 mt-1 leading-relaxed">Link your WhatsApp account above to deliver messages directly to guests. For this demo, you can still generate and preview all messages below.</p>
+              </div>
+            </div>
+          )}
             {/* Input Method Selector */}
             <div className="flex gap-2 mb-6 bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/50 relative z-10">
           <button
@@ -305,7 +369,7 @@ export default function NotificationSender({ user }) {
               />
             </div>
             {customers.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-slate-500 font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 p-2.5 rounded-lg">
+              <div className="flex items-center justify-between text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 p-2.5 rounded-lg">
                 <span>Parsed {customers.length} customer(s) successfully!</span>
                 <button onClick={() => setCustomers([])} className="text-emerald-900 hover:underline">Clear</button>
               </div>
@@ -415,8 +479,7 @@ export default function NotificationSender({ user }) {
             </motion.div>
           )}
         </AnimatePresence>
-          </motion.div>
-        )}
+        </motion.div>
       </div>
     </div>
   );
